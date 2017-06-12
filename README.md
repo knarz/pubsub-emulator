@@ -11,10 +11,7 @@ Or in a `docker-compose.yml`
 
 ```
 pubsub:
-  build: knarz/pubsub-emulator
-  ports:
-    - "8085"
-  restart: always
+  image: knarz/pubsub-emulator
 worker:
   build: .
   environment:
