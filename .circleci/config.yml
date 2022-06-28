@@ -1,0 +1,41 @@
+version: 2.1
+
+jobs:
+  build: &build
+    docker:
+      - image: cimg/base:2022.06
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Setup GCloud SDK
+          command: |
+            sh gcloud-sdk-setup.sh
+      - run:
+          name: Build docker image
+          command: |
+            export PATH=${HOME}/google-cloud-sdk/bin:$PATH
+            export DOCKER_SAFE_NAME=${CIRCLE_BRANCH//\//-}-${CIRCLE_SHA1}
+            docker build --rm --tag peachfinance/pubsub-emulator:$DOCKER_SAFE_NAME .
+            docker tag peachfinance/pubsub-emulator:$DOCKER_SAFE_NAME us-docker.pkg.dev/peach-finance/peach-docker/pubsub-emulator:$DOCKER_SAFE_NAME
+            docker tag peachfinance/pubsub-emulator:$DOCKER_SAFE_NAME us-docker.pkg.dev/peach-finance/peach-docker/pubsub-emulator:latest
+      - run:
+          name: Push docker image to GCloud Registry
+          command: |
+            export PATH=${HOME}/google-cloud-sdk/bin:$PATH
+            gcloud auth configure-docker us-docker.pkg.dev
+            export DOCKER_SAFE_NAME=${CIRCLE_BRANCH//\//-}-${CIRCLE_SHA1}
+            docker push us-docker.pkg.dev/peach-finance/peach-docker/pubsub-emulator:$DOCKER_SAFE_NAME
+            docker push us-docker.pkg.dev/peach-finance/peach-docker/pubsub-emulator:latest
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - master
