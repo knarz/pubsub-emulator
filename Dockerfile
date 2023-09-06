@@ -1,4 +1,4 @@
-FROM openjdk:11
+FROM openjdk:17.0.2 
 
 LABEL app="pubsub-emulator"
 
